@@ -1,0 +1,58 @@
+ dava sistemi
+ 
+ #define MAKS_DAVA       (100)
+ enum davaBilgi
+{
+	davaID,
+	davaIcerik[32],
+	davaMagdur,new DavaBilgi[MAKS_DAVA][davaBilgi];
+	davaSanik,
+	davaDurum,
+	bool:davaYaratildi
+};
+
+
+CMD:davaolustur(playerid, params[])
+{
+	new magdurid, sanikid, davaid, sorgu[256];
+	if (!IsPlayerConnected(playerid)) return 1;
+	if (OyuncuBilgi[playerid][oAdmin] < 1) return HataMesaji(playerid, "Eri�im izniniz yok.");
+	if (sscanf(params, "uu", magdurid, sanikid)) return KullanimMesaji(playerid, "/davaolustur [ma�dur ki�i] [san�k ki�i]");
+	
+	format(sorgu, sizeof(sorgu), "INSERT INTO `davalar` (`Magdur`, `Sanik`, `Durum`) VALUES ('%s', '%s', '%d')", isimcek(magdurid), isimcek(sanikid), 1);
+	mysql_tquery(RC, sorgu);
+	
+	DavaBilgi[davaid][davaID] = cache_insert_id();
+	DavaBilgi[davaid][davaYaratildi] = true;
+	Dialog_Show(playerid, DavaOlustur, DIALOG_STYLE_INPUT, "Dava Olu�tur", "Olu�turmak istedi�iniz dava hakk�nda k�sa �zet bildirin:\n\nDava HK:\nKasten yaralama\nSilahl� �at��ma\n�evreye rahats�zl�k verme\nDevlet mal�na zarar verme", "Devam", "Geri");
+	return 1;
+}
+
+CMD:davalar(playerid, params[])
+{
+    if (!IsPlayerConnected(playerid)) return 1;
+	if (OyuncuBilgi[playerid][oAdmin] < 1) return HataMesaji(playerid, "Eri�im izniniz yok.");
+	
+	static mesaj[512 * MAKS_DAVA];
+	mesaj[0] = 0;
+	for (new i = 0; i != MAX_PLAYERS; i ++) if (DavaBilgi[i][davaYaratildi] == true)
+	{
+	    format(mesaj, sizeof(mesaj), "%s{ffffff}Dava NO: %d | Ma�dur: %s | San�k: %s", DavaBilgi[i][davaID], vericek_int(0, "Magdur"), vericek_int(0, "Sanik"));
+	}
+	Dialog_Show(playerid, Davalar, DIALOG_STYLE_LIST, "Davalar", mesaj, "Se�", "Geri");
+	return 1;
+}
+
+Dialog:DavaOlustur(playerid, response, listitem, inputtext[])
+{
+	if (response)
+	{
+	    new davaid;
+	    if (!response) return Dialog_Show(playerid, DavaOlustur, DIALOG_STYLE_INPUT, "Dava Olu�tur", "Olu�turmak istedi�iniz dava hakk�nda k�sa �zet bildirin:\n\nDava HK:\nKasten yaralama\nSilahl� �at��ma\n�evreye rahats�zl�k verme\nDevlet mal�na zarar verme", "Devam", "Geri");
+		if (strlen(inputtext) < 16 || strlen(inputtext) > 32) return Dialog_Show(playerid, DavaOlustur, DIALOG_STYLE_INPUT, "Dava Olu�tur", "Olu�turmak istedi�iniz dava hakk�nda k�sa �zet bildirin:\n\nDava HK:\nKasten yaralama\nSilahl� �at��ma\n�evreye rahats�zl�k verme\nDevlet mal�na zarar verme", "Devam", "Geri");
+		
+		format(DavaBilgi[davaid][davaIcerik], 128, inputtext);
+		SunucuMesaji(playerid, "Dava olu�turuldu. (Ma�dur: %s, San�k: %s, ��erik: %s)", vericek_int(0, "Magdur"), vericek_int(0, "Sanik"), inputtext);
+	}
+	return 1;
+}
